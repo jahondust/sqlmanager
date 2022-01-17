@@ -1,0 +1,12 @@
+venv
+backups
+media
+static
+!**/__pycache__/
+*.pyc
+*.pyo
+/.idea
+/.vs
+/config/db.py
+celerybeat-schedule
+/logs
