@@ -1,5 +1,7 @@
 import importlib
 from io import BytesIO
+
+from django.db.models import Prefetch, Count, Q
 from django.http import HttpResponse
 from xlsxwriter.workbook import Workbook
 
@@ -9,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.api.queries.permissions import ViewPermission
 from apps.api.queries.serializers import CategorySerializer, ParamSerializer
 from apps.queries.models import Category, Query, Param
 
@@ -17,11 +20,18 @@ class CategoryView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
     ordering_fields = ['name']
-    queryset = Category.objects.all()
+
+    def get_queryset(self):
+        ids = self.request.user.queries.values('id')
+        return Category.objects\
+            .prefetch_related(Prefetch('queries',
+                                       queryset=Query.objects.filter(id__in=ids)))\
+            .annotate(queries_count=Count('queries', filter=Q(queries__id__in=ids)))\
+            .filter(queries_count__gt=0)
 
 
 class ParamView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ViewPermission]
     serializer_class = ParamSerializer
     ordering_fields = ['name']
 
@@ -31,7 +41,7 @@ class ParamView(generics.ListAPIView):
 
 
 class QueryViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ViewPermission]
     serializer_class = CategorySerializer
     ordering_fields = ['name']
     queryset = Query.objects.all()
