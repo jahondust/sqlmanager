@@ -15,6 +15,21 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 import os
 
+
+def get_list(text):
+    return [item.strip() for item in text.split(",")]
+
+
+def get_bool_from_env(name, default_value):
+    if name in os.environ:
+        value = os.environ[name]
+        try:
+            return ast.literal_eval(value)
+        except ValueError as e:
+            raise ValueError("{} is an invalid value for {}".format(value, name)) from e
+    return default_value
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -22,12 +37,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t!*gw9v)ot)gkey5x^a4%dcmi$57g)%z)t+g^!6khk0)m-3)pt'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-t!*gw9v)ot)gkey5x^a4%dcmi$57g)%z)t+g^!6khk0)m-3)pt')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_bool_from_env('DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "*"))
+
+CSRF_TRUSTED_ORIGINS = get_list(os.environ.get("CSRF_TRUSTED_ORIGINS", "http://127.0.0.1"))
+
+CORS_ALLOWED_ORIGINS = get_list(os.environ.get("CORS_ALLOWED_ORIGINS", "http://127.0.0.1"))
 
 
 # Application definition
@@ -85,11 +104,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sqlmanager',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': os.environ.get('POSTGRES_DB', 'sqlmanager'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
