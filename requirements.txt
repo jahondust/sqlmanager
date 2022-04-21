@@ -12,7 +12,7 @@ Markdown
 openpyxl
 paramiko
 Pillow
-psycopg2
+psycopg2-binary
 pycparser
 PyJWT
 PyNaCl
