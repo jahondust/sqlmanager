@@ -13,15 +13,6 @@ services:
     env_file:
       - .env
 
-  redis:
-    image: library/redis:5.0-alpine
-    restart: unless-stopped
-    volumes:
-      - /var/lib/redis/data:/data
-    networks:
-      static-network:
-        ipv4_address: 172.20.0.4
-
   nginx:
     build:
       context: ./docker/nginx
@@ -59,7 +50,6 @@ services:
       - .env
     depends_on:
       - db
-      - redis
 
 volumes:
   app-media:
