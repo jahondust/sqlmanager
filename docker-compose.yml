@@ -1,0 +1,72 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:12.3
+    hostname: db
+    restart: unless-stopped
+    volumes:
+      - /var/lib/postgresql/data:/var/lib/postgresql/data
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.3
+    env_file:
+      - .env
+
+  redis:
+    image: library/redis:5.0-alpine
+    restart: unless-stopped
+    volumes:
+      - /var/lib/redis/data:/data
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.4
+
+  nginx:
+    build:
+      context: ./docker/nginx
+    image: ${DOCKER_REPOSITORY}/nginx:${DOCKER_NGINX_VERSION}
+    command: /run_nginx.sh
+    restart: unless-stopped
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/nginx/sites-enabled/:/etc/nginx/sites-enabled/
+      - app-media:/app/media
+      - app-static:/app/static
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.5
+    env_file:
+      - .env
+
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    image: ${DOCKER_REPOSITORY}/app:${DOCKER_APP_VERSION}
+    hostname: app
+    restart: unless-stopped
+    volumes:
+      - app-media:/app/media
+      - app-static:/app/static
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.6
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  app-media:
+  app-static:
+
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
